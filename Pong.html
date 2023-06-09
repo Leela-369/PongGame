@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <style>
+    body {
+    margin: 0;
+    overflow: hidden;
+  }
+
+  #pong {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background-color: black;
+  }
+
+  #paddleA,
+  #paddleB {
+    position: absolute;
+    width: 10px;
+    height: 60px;
+    background-color: white;
+  }
+
+  #paddleA {
+    left: 10px;
+    top: 170px;
+  }
+
+  #paddleB {
+    right: 10px;
+    top: 170px;
+  }
+
+  #ball {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: white;
+  }
+
+  #overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    z-index: 1;
+  }
+
+  #overlay-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+  }
+
+  #restart-button {
+    background-color: #ff3c00;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  </style>
+  </head>
+  <body>
+    <div id="pong">
+      <div id="paddleA"></div>
+      <div id="paddleB"></div>
+      <div id="ball"></div>
+      <div id="overlay">
+        <div id="overlay-content">
+          <h1>Game Over</h1>
+          <button id="restart-button">Restart</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var pong = document.getElementById('pong');
+      var paddleA = document.getElementById('paddleA');
+      var paddleB = document.getElementById('paddleB');
+      var ball = document.getElementById('ball');
+      var overlay = document.getElementById('overlay');
+      var restartButton = document.getElementById('restart-button');
+
+      var pongRect = pong.getBoundingClientRect();
+      var paddleARect = paddleA.getBoundingClientRect();
+      var paddleBRect = paddleB.getBoundingClientRect();
+      var ballRect = ball.getBoundingClientRect();
+
+      var paddleAUp = false;
+      var paddleADown = false;
+      var paddleBUp = false;
+      var paddleBDown = false;
+
+      var isGameOver = false;
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'w') {
+          paddleAUp = true;
+        } else if (e.key === 's') {
+          paddleADown = true;
+        } else if (e.key === 'ArrowUp') {
+          paddleBUp = true;
+        } else if (e.key === 'ArrowDown') {
+          paddleBDown = true;
+        }
+      });
+
+      document.addEventListener('keyup', function(e) {
+        if (e.key === 'w') {
+          paddleAUp = false;
+        } else if (e.key === 's') {
+          paddleADown = false;
+        } else if (e.key === 'ArrowUp') {
+          paddleBUp = false;
+        } else if (e.key === 'ArrowDown') {
+          paddleBDown = false;
+        }
+      });
+
+      function update() {
+        if (isGameOver) return;
+
+        var paddleASpeed = paddleAUp ? -5 : paddleADown ? 5 : 0;
+        var paddleBSpeed = paddleBUp ? -5 : paddleBDown ? 5 : 0;
+
+        var paddleATop = paddleARect.top + paddleASpeed;
+        var paddleABottom = paddleARect.bottom + paddleASpeed;
+        var paddleBTop = paddleBRect.top + paddleBSpeed;
+        var paddleBBottom = paddleBRect.bottom + paddleBSpeed;
+
+        if (paddleATop >= pongRect.top && paddleABottom <= pongRect.bottom) {
+          paddleA.style.top = paddleATop + 'px';
+        }
+
+        if (paddleBTop >= pongRect.top && paddleBBottom <= pongRect.bottom) {
+          paddleB.style.top = paddleBTop + 'px';
+        }
+
+        paddleARect = paddleA.getBoundingClientRect();
+        paddleBRect = paddleB.getBoundingClientRect();
+
+        var ballTop = ball.offsetTop + ball.dy;
+        var ballBottom = ballTop + ball.offsetHeight;
+        var ballLeft = ball.offsetLeft + ball.dx;
+        var ballRight = ballLeft + ball.offsetWidth;
+
+        if (ballTop <= pongRect.top || ballBottom >= pongRect.bottom) {
+          ball.dy *= -1;
+        }
+
+        if (
+          ballLeft <= paddleARect.right &&
+          ballRight >= pongRect.left &&
+          ballTop <= paddleARect.bottom &&
+          ballBottom >= paddleARect.top
+        ) {
+          ball.dx *= -1;
+        }
+
+        if (
+          ballLeft <= paddleBRect.right &&
+          ballRight >= paddleBRect.left &&
+          ballTop <= paddleBRect.bottom &&
+          ballBottom >= paddleBRect.top
+        ) {
+          ball.dx *= -1;
+        }
+
+        if (ballLeft <= pongRect.left) {
+          gameOver();
+        } else if (ballRight >= pongRect.right) {
+          gameOver();
+        }
+
+        ball.style.top = ballTop + 'px';
+        ball.style.left = ballLeft + 'px';
+
+        requestAnimationFrame(update);
+      }
+
+      function resetBall() {
+        ball.style.top = pongRect.height / 2 - ball.offsetHeight / 2 + 'px';
+        ball.style.left = pongRect.width / 2 - ball.offsetWidth / 2 + 'px';
+        ball.dx = 3 * (Math.random() > 0.5 ? 1 : -1);
+        ball.dy = 3 * (Math.random() > 0.5 ? 1 : -1);
+      }
+
+      function gameOver() {
+        isGameOver = true;
+        overlay.style.display = 'block';
+      }
+
+      restartButton.addEventListener('click', function() {
+        isGameOver = false;
+        overlay.style.display = 'none';
+        resetBall();
+        requestAnimationFrame(update);
+      });
+
+      resetBall();
+      requestAnimationFrame(update);
+    </script>
+  </body>
+</html>
